@@ -3,6 +3,7 @@ package io.github.ggerganov.whispercpp;
 import static org.junit.Assert.*;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import androidx.test.platform.app.InstrumentationRegistry;
 
 import org.junit.Assume;
 import org.junit.BeforeClass;
@@ -28,28 +29,37 @@ import java.util.List;
 /**
  * Instrumented tests for WhisperCpp, mirroring the desktop WhisperCppTest suite.
  *
- * Before running, push the required files to the device:
- *   adb push models/ggml-tiny.en.bin /sdcard/ggml-tiny.en.bin
- *   adb push samples/jfk.wav /sdcard/jfk.wav
+ * Before running, push the required files to the app's external files directory.
+ * The exact path is printed during the @BeforeClass setup, or you can derive it as:
+ *   adb push models/ggml-tiny.en.bin \
+ *     /sdcard/Android/data/io.github.ggerganov.whispercpp.test/files/ggml-tiny.en.bin
+ *   adb push samples/jfk.wav \
+ *     /sdcard/Android/data/io.github.ggerganov.whispercpp.test/files/jfk.wav
+ *
+ * Using the app's external files directory avoids any READ_EXTERNAL_STORAGE permission
+ * requirements on Android 13+.
  */
 @RunWith(AndroidJUnit4.class)
 public class WhisperCppTest {
 
-    private static final String MODEL_PATH = "/sdcard/ggml-tiny.en.bin";
-    private static final String AUDIO_PATH = "/sdcard/jfk.wav";
-
     private static final WhisperCpp whisper = new WhisperCpp();
     private static boolean modelInitialised = false;
+    private static File audioFile;
 
     @BeforeClass
     public static void init() {
+        File externalDir = InstrumentationRegistry.getInstrumentation()
+                .getTargetContext().getExternalFilesDir(null);
+        File modelFile = new File(externalDir, "ggml-tiny.en.bin");
+        audioFile = new File(externalDir, "jfk.wav");
+        System.out.println("Test asset directory: " + externalDir.getAbsolutePath());
         try {
             WhisperContextParams.ByValue contextParams = whisper.getContextDefaultParams();
             contextParams.useFlashAttn(false);
-            whisper.initContext(MODEL_PATH, contextParams);
+            whisper.initContext(modelFile.getAbsolutePath(), contextParams);
             modelInitialised = true;
         } catch (FileNotFoundException e) {
-            System.out.println("Model not found at " + MODEL_PATH + ", transcription tests will be skipped");
+            System.out.println("Model not found at " + modelFile + ", transcription tests will be skipped");
         }
     }
 
@@ -80,7 +90,7 @@ public class WhisperCppTest {
     public void testFullTranscribe() throws Exception {
         Assume.assumeTrue("Model not initialised, skipping", modelInitialised);
 
-        float[] samples = decodeWavFile(new File(AUDIO_PATH));
+        float[] samples = decodeWavFile(audioFile);
         WhisperFullParams.ByValue params = whisper.getFullDefaultParams(WhisperSamplingStrategy.WHISPER_SAMPLING_BEAM_SEARCH);
         params.setProgressCallback((ctx, state, progress, user_data) -> System.out.println("progress: " + progress));
         params.print_progress = CBool.FALSE;
@@ -99,7 +109,7 @@ public class WhisperCppTest {
     public void testFullTranscribeWithTime() throws Exception {
         Assume.assumeTrue("Model not initialised, skipping", modelInitialised);
 
-        float[] samples = decodeWavFile(new File(AUDIO_PATH));
+        float[] samples = decodeWavFile(audioFile);
         WhisperFullParams.ByValue params = whisper.getFullDefaultParams(WhisperSamplingStrategy.WHISPER_SAMPLING_BEAM_SEARCH);
         params.setProgressCallback((ctx, state, progress, user_data) -> System.out.println("progress: " + progress));
         params.print_progress = CBool.FALSE;
