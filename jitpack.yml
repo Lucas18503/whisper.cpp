@@ -1,0 +1,7 @@
+jdk:
+  - openjdk21
+before_install:
+  - yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "ndk;29.0.14206865" "cmake;3.22.1"
+  - export ANDROID_NDK_HOME=$ANDROID_HOME/ndk/29.0.14206865
+install:
+  - cd bindings/java && ./gradlew :android:publishToMavenLocal

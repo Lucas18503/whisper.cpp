@@ -1,5 +1,6 @@
 plugins {
     id 'com.android.library'
+    id 'maven-publish'
 }
 
 android {
@@ -42,6 +43,23 @@ android {
     sourceSets {
         main {
             java.srcDirs = ['../src/main/java']
+        }
+    }
+
+    publishing {
+        singleVariant('release')
+    }
+}
+
+afterEvaluate {
+    publishing {
+        publications {
+            release(MavenPublication) {
+                from components.release
+                groupId = 'io.github.ggerganov'
+                artifactId = 'whispercpp-android'
+                version = '1.4.0'
+            }
         }
     }
 }
