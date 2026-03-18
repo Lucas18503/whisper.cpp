@@ -39,10 +39,23 @@ target_compile_definitions(whisper PUBLIC WHISPER_SHARED WHISPER_BUILD)
 target_compile_definitions(whisper PRIVATE GGML_USE_CPU)
 target_compile_definitions(whisper PRIVATE WHISPER_VERSION="${WHISPER_VERSION}")
 
+# ABI-specific SIMD flags — mirrors the approach used in examples/whisper.android.
+# Applied to both whisper and ggml so the full inference pipeline is vectorised.
+if (${ANDROID_ABI} STREQUAL "arm64-v8a")
+    set(ARCH_COMPILE_OPTIONS -march=armv8.2-a+fp16)
+elseif (${ANDROID_ABI} STREQUAL "x86_64")
+    set(ARCH_COMPILE_OPTIONS -mavx2 -mfma -mf16c)
+endif ()
+target_compile_options(whisper PRIVATE ${ARCH_COMPILE_OPTIONS})
+target_compile_options(ggml   PRIVATE ${ARCH_COMPILE_OPTIONS})
+
 if (NOT ${CMAKE_BUILD_TYPE} STREQUAL "Debug")
     target_compile_options(whisper PRIVATE -O3)
     target_compile_options(whisper PRIVATE -fvisibility=hidden -fvisibility-inlines-hidden)
     target_compile_options(whisper PRIVATE -ffunction-sections -fdata-sections)
+    target_link_options(whisper PRIVATE -Wl,--gc-sections)
+    target_link_options(whisper PRIVATE -Wl,--exclude-libs,ALL)
+    target_link_options(whisper PRIVATE -flto)
 endif ()
 
 include_directories(${WHISPER_LIB_DIR})
