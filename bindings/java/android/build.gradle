@@ -70,7 +70,12 @@ repositories {
 }
 
 dependencies {
-    api 'net.java.dev.jna:jna:5.18.1@aar'
+    api('net.java.dev.jna:jna:5.18.1') {
+        artifact {
+            name = 'jna'
+            type = 'aar'
+        }
+    }
     androidTestImplementation 'androidx.test.ext:junit:1.3.0'
     androidTestImplementation 'androidx.test:runner:1.7.0'
 }
