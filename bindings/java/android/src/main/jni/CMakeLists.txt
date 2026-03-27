@@ -39,15 +39,12 @@ target_compile_definitions(whisper PUBLIC WHISPER_SHARED WHISPER_BUILD)
 target_compile_definitions(whisper PRIVATE GGML_USE_CPU)
 target_compile_definitions(whisper PRIVATE WHISPER_VERSION="${WHISPER_VERSION}")
 
-# ABI-specific SIMD flags — mirrors the approach used in examples/whisper.android.
-# Applied to both whisper and ggml so the full inference pipeline is vectorised.
-if (${ANDROID_ABI} STREQUAL "arm64-v8a")
-    set(ARCH_COMPILE_OPTIONS -march=armv8.2-a+fp16)
-elseif (${ANDROID_ABI} STREQUAL "x86_64")
-    set(ARCH_COMPILE_OPTIONS -mavx2 -mfma -mf16c)
-endif ()
-target_compile_options(whisper PRIVATE ${ARCH_COMPILE_OPTIONS})
-target_compile_options(ggml   PRIVATE ${ARCH_COMPILE_OPTIONS})
+# Do NOT set global -march=armv8.2-a+fp16 or -mavx2 flags here.
+# The arm64-v8a ABI only guarantees ARMv8.0-A baseline and not all devices
+# support ARMv8.2/fp16.  Similarly, not all x86_64 Android devices have AVX2.
+# The ggml backend already performs runtime CPU feature detection for SIMD,
+# so forcing advanced instruction sets at compile time causes SIGILL crashes
+# on devices that lack support.
 
 if (NOT ${CMAKE_BUILD_TYPE} STREQUAL "Debug")
     target_compile_options(whisper PRIVATE -O3)
