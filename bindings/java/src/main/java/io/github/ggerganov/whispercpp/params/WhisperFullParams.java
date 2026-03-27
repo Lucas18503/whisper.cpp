@@ -317,7 +317,7 @@ public class WhisperFullParams extends Structure {
         progress_callback = CallbackReference.getFunctionPointer(callback);
     }
 
-    public void setEncoderBeginCallbackeginCallbackCallback(WhisperEncoderBeginCallback callback) {
+    public void setEncoderBeginCallback(WhisperEncoderBeginCallback callback) {
         encoder_begin_callback = CallbackReference.getFunctionPointer(callback);
     }
 
@@ -330,6 +330,20 @@ public class WhisperFullParams extends Structure {
     public long n_grammar_rules;
     public long i_start_rule;
     public float grammar_penalty;
+
+    /** Enable Voice Activity Detection. (default = false) */
+    public CBool vad;
+
+    /** Enable Voice Activity Detection. */
+    public void enableVad(boolean enable) {
+        vad = enable ? CBool.TRUE : CBool.FALSE;
+    }
+
+    /** Path to VAD model. */
+    public String vad_model_path;
+
+    /** VAD parameters. */
+    public WhisperVadParams vad_params;
 
     @Override
     protected List<String> getFieldOrder() {
@@ -349,7 +363,8 @@ public class WhisperFullParams extends Structure {
                 "encoder_begin_callback", "encoder_begin_callback_user_data",
                 "abort_callback", "abort_callback_user_data",
                 "logits_filter_callback", "logits_filter_callback_user_data",
-                "grammar_rules", "n_grammar_rules", "i_start_rule", "grammar_penalty");
+                "grammar_rules", "n_grammar_rules", "i_start_rule", "grammar_penalty",
+                "vad", "vad_model_path", "vad_params");
     }
 
     public static class ByValue extends WhisperFullParams implements Structure.ByValue {
